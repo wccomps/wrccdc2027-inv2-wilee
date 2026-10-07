@@ -1,0 +1,11 @@
+---
+- name: Install Python
+  chocolatey.chocolatey.win_chocolatey:
+    name: python
+    state: present
+  register: python_install
+
+- name: Get Python version
+  ansible.windows.win_command: python --version
+  changed_when: false
+  failed_when: false

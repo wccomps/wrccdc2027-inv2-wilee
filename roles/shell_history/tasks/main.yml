@@ -1,0 +1,39 @@
+---
+# Limit PowerShell console history and stop it being written to disk.
+# Scope: PSReadLine interactive command history (the arrow-up recall buffer /
+# ConsoleHost_history.txt). This does NOT touch Windows Event Log, PowerShell
+# script-block/module logging, or transcription — those are left intact for IR.
+
+- name: Allow local script execution
+  ansible.windows.win_shell: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
+  changed_when: true
+  failed_when: false
+
+- name: Delete PSReadLine file for each user
+  ansible.windows.win_shell: |
+    $paths = @()
+    try { $paths += (Get-PSReadLineOption).HistorySavePath } catch {}
+    Get-ChildItem "C:\Users\*\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -ErrorAction SilentlyContinue |
+      ForEach-Object { $paths += $_.FullName }
+    $paths | Sort-Object -Unique | ForEach-Object {
+      Remove-Item -LiteralPath $_ -Force -ErrorAction SilentlyContinue
+    }
+  changed_when: true
+  failed_when: false
+
+- name: Add system-wide profile to disable history saves
+  ansible.windows.win_shell: |
+    $content = @'
+    Set-PSReadLineOption -HistorySaveStyle SaveNothing -ErrorAction SilentlyContinue
+    Set-PSReadLineOption -MaximumHistoryCount 1 -ErrorAction SilentlyContinue
+    '@
+    $targets = @("$PSHOME\profile.ps1")   # WinPS 5.1 all-users, all-hosts
+    if (Test-Path "$env:ProgramFiles\PowerShell\7") {
+      $targets += "$env:ProgramFiles\PowerShell\7\profile.ps1"
+    }
+    foreach ($t in $targets) {
+      $dir = Split-Path $t
+      if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+      Set-Content -LiteralPath $t -Value $content -Force
+    }
+  changed_when: true

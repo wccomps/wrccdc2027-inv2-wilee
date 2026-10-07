@@ -1,0 +1,7 @@
+---
+# Install Git via Chocolatey (choco self-bootstraps on first use).
+
+- name: Install Git
+  chocolatey.chocolatey.win_chocolatey:
+    name: git
+    state: present

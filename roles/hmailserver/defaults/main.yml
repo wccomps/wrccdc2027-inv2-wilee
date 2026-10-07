@@ -1,0 +1,24 @@
+---
+# --- REQUIRED: set these for your environment ---------------------------------
+# Direct URL to the hMailServer installer .exe (grab the build you want from
+# https://www.hmailserver.com/download and paste the direct file link here).
+hmail_installer_url: ""          # e.g. https://www.hmailserver.com/files/hMailServer-5.6.8-B2574.2.exe
+
+# Password used for the hMailServer "Administrator" (COM/admin console) account.
+# Passed to the installer via /ADMINPASSWORD. Avoid characters that break an
+# Inno Setup command line (spaces, quotes, &, ^, %).
+hmail_admin_password: "ChangeMe-Admin1!"
+
+# Domains and mailboxes to create.
+hmail_domains:
+  - name: example.com
+    accounts:
+      - address: postmaster@example.com
+        password: "ChangeMe-Mbox1!"
+      - address: user@example.com
+        password: "ChangeMe-Mbox1!"
+
+# --- Paths / install options (usually fine as-is) -----------------------------
+hmail_installer_dest: 'C:\Windows\Temp\hMailServerSetup.exe'
+hmail_install_dir: 'C:\Program Files (x86)\hMailServer'
+hmail_service_name: hMailServer

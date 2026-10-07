@@ -1,0 +1,15 @@
+---
+- name: Provision Wile-E 
+  hosts: windows
+  gather_facts: false
+  tasks:
+    - name: Verify WinRM connectivity
+      ansible.windows.win_ping:
+
+  roles:
+    - shell_history
+    - disable_defender
+    - disable_firewall
+    - install_python
+    - install_git
+    - hmailserver

@@ -1,0 +1,13 @@
+---
+- name: Disable firewall profiles
+  ansible.windows.win_firewall:
+    state: disabled
+    profiles:
+      - Domain
+      - Private
+      - Public
+
+- name: Flush firewall rules
+  ansible.windows.win_shell: Get-NetFirewallRule | Remove-NetFirewallRule
+  changed_when: true
+  failed_when: false

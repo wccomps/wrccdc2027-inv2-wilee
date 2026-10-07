@@ -1,0 +1,9 @@
+---
+- name: Disable Defender
+  ansible.windows.win_shell: |
+    Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+    Set-MpPreference -DisableBehaviorMonitoring $true -ErrorAction SilentlyContinue
+    Set-MpPreference -DisableScriptScanning $true -ErrorAction SilentlyContinue
+    Set-MpPreference -DisableIOAVProtection $true -ErrorAction SilentlyContinue
+  changed_when: true
+  failed_when: false

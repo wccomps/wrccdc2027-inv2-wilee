@@ -1,0 +1,18 @@
+---
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_transport: ntlm
+ansible_winrm_scheme: http
+ansible_winrm_message_encryption: auto
+
+ansible_user: ACME\Administrator
+ansible_password: BeepBeep1!
+
+hmail_installer_url: "https://github.com/hmailserver/hmailserver/releases/download/hMailServer-5.7.1-b3116/hMailServer-5.7.1-B3116-x64.exe"
+hmail_admin_password: BeepBeep1!
+
+hmail_domains:
+  - name: acme.anvil
+    accounts:
+      - address: postmaster@acme.anvil
+        password: BeepBeep1!

@@ -1,0 +1,36 @@
+---
+- name: Fail early if installer URL is not set
+  ansible.builtin.assert:
+    that: hmail_installer_url | length > 0
+    fail_msg: "Set hmail_installer_url (direct link to the hMailServer installer .exe)."
+
+- name: Download hMailServer installer
+  ansible.windows.win_get_url:
+    url: "{{ hmail_installer_url }}"
+    dest: "{{ hmail_installer_dest }}"
+
+- name: Run installer
+  ansible.windows.win_package:
+    path: "{{ hmail_installer_dest }}"
+    arguments: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /ADMINPASSWORD={{ hmail_admin_password }}
+    creates_path: "{{ hmail_install_dir }}\\Bin\\hMailServer.exe"
+    expected_return_code: [0, 3010]
+  no_log: true
+
+- name: Ensure hMailServer is running and set to auto-start
+  ansible.windows.win_service:
+    name: "{{ hmail_service_name }}"
+    state: started
+    start_mode: auto
+
+- name: Apply domains and accounts via the hMailServer COM API
+  # Static script + runtime params; runs through Ansible's transient exec
+  # wrapper, so nothing is written to the hMailServer directory.
+  ansible.windows.win_powershell:
+    script: "{{ lookup('file', 'configure.ps1') }}"
+    parameters:
+      AdminPassword: "{{ hmail_admin_password }}"
+      DomainsJson: "{{ hmail_domains | to_json }}"
+  register: hmail_cfg
+  changed_when: "'APPLIED' in (hmail_cfg.output | join(' '))"
+  no_log: true
