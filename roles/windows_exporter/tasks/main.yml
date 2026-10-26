@@ -1,0 +1,31 @@
+---
+- name: Download windows_exporter MSI
+  ansible.windows.win_get_url:
+    url: "{{ windows_exporter_url }}"
+    dest: "{{ windows_exporter_msi }}"
+    force: false
+
+# win_package reads the MSI's product code, so this is skipped once this
+# version is installed. Changing collectors/port after that needs a reinstall
+# (or edit the service's command line).
+- name: Install windows_exporter
+  ansible.windows.win_package:
+    path: "{{ windows_exporter_msi }}"
+    arguments: >-
+      ENABLED_COLLECTORS="{{ windows_exporter_collectors }}"
+      LISTEN_PORT={{ windows_exporter_port }}
+      ADDLOCAL=FirewallException
+
+- name: Ensure windows_exporter is running and set to auto-start
+  ansible.windows.win_service:
+    name: "{{ windows_exporter_service }}"
+    start_mode: auto
+    state: started
+
+- name: Check the metrics endpoint responds
+  ansible.windows.win_uri:
+    url: "http://localhost:{{ windows_exporter_port }}/metrics"
+  register: we_metrics
+  retries: 5
+  delay: 3
+  until: we_metrics.status_code == 200

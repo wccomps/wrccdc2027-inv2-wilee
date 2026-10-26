@@ -1,0 +1,12 @@
+---
+# Prometheus windows_exporter, installed from its MSI as the "windows_exporter"
+# service. Bump the version to upgrade (the MSI replaces the old install).
+windows_exporter_version: "0.32.0"
+windows_exporter_url: "https://github.com/prometheus-community/windows_exporter/releases/download/v{{ windows_exporter_version }}/windows_exporter-{{ windows_exporter_version }}-amd64.msi"
+windows_exporter_msi: 'C:\Windows\Temp\windows_exporter-{{ windows_exporter_version }}-amd64.msi'
+
+# "[defaults]" = the exporter's built-in set (cpu, memory, disks, net, os,
+# service, system, ...); append more like "[defaults],process,tcp".
+windows_exporter_collectors: "[defaults]"
+windows_exporter_port: 9182
+windows_exporter_service: windows_exporter
