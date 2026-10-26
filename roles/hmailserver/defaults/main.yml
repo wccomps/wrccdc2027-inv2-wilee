@@ -10,6 +10,12 @@ hmail_installer_url: ""          # e.g. https://www.hmailserver.com/files/hMailS
 hmail_admin_password: "ChangeMe-Admin1!"
 
 # Domains and mailboxes to create.
+#   accounts:     local mailboxes with their own hMailServer password
+#                 (or AD-backed: ad_username + ad_domain instead of password)
+#   ad_accounts:  AD usernames; each gets <user>@<name>, authenticating against
+#                 AD domain ad_domain (defaults to name)
+#   from_ad:      true = a mailbox for every enabled AD user (narrow with ad_filter)
+#   ad_max_size:  quota in MB for ad_accounts / from_ad mailboxes
 hmail_domains:
   - name: example.com
     accounts:
@@ -17,6 +23,11 @@ hmail_domains:
         password: "ChangeMe-Mbox1!"
       - address: user@example.com
         password: "ChangeMe-Mbox1!"
+    ad_accounts: []
+
+# Ban IPs after repeated failed logons. Off is safer when a scoring engine
+# logs in from a fixed address.
+hmail_autoban_on_logon_failure: true
 
 # --- Paths / install options (usually fine as-is) -----------------------------
 hmail_installer_dest: 'C:\Windows\Temp\hMailServerSetup.exe'

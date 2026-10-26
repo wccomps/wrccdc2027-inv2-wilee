@@ -31,6 +31,7 @@
     parameters:
       AdminPassword: "{{ hmail_admin_password }}"
       DomainsJson: "{{ hmail_domains | to_json }}"
+      AutoBanOnLogonFailure: "{{ hmail_autoban_on_logon_failure | bool }}"
   register: hmail_cfg
   changed_when: "'APPLIED' in (hmail_cfg.output | join(' '))"
   no_log: true

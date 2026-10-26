@@ -16,3 +16,37 @@ hmail_domains:
     accounts:
       - address: postmaster@acme.anvil
         password: BeepBeep1!
+    ad_max_size: 100
+    ad_accounts:
+      - beaky.buzzard
+      - bugs.bunny
+      - cecil.turtle
+      - charlie.dog
+      - daffy.duck
+      - elmer.fudd
+      - foghorn.leghorn
+      - gossamer.monster
+      - granny.webster
+      - henery.hawk
+      - lola.bunny
+      - marc.antony
+      - marvin.martian
+      - michigan.frog
+      - mugsy.mouse
+      - nasty.canasta
+      - penelope.pussycat
+      - pete.puma
+      - porky.pig
+      - ralph.wolf
+      - road.runner
+      - rocky.rooster
+      - sam.sheepdog
+      - speedy.gonzales
+      - sylvester.cat
+      - taz.devil
+      - tweety.bird
+      - wile.coyote
+      - witch.hazel
+      - yosemite.sam
+
+hmail_autoban_on_logon_failure: false

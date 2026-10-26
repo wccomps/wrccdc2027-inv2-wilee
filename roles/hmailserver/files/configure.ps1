@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$AdminPassword,
-    [Parameter(Mandatory = $true)][string]$DomainsJson
+    [Parameter(Mandatory = $true)][string]$DomainsJson,
+    [bool]$AutoBanOnLogonFailure = $true
 )
 
 # Configure hMailServer domains/accounts via its COM API. Idempotent.
@@ -12,8 +13,11 @@ $domains = $DomainsJson | ConvertFrom-Json
 $hmail = New-Object -ComObject hMailServer.Application
 $hmail.Authenticate("Administrator", $AdminPassword) | Out-Null
 
+# Settings properties persist on assignment; no Save() needed.
+$hmail.Settings.AutoBanOnLogonFailure = $AutoBanOnLogonFailure
+
 # Create (or fetch) a mailbox and point its auth at the given AD account.
-function Set-AdMailbox($domain, $address, $netbios, $sam) {
+function Set-AdMailbox($domain, $address, $netbios, $sam, $maxSize = $null) {
     try { $acct = $domain.Accounts.ItemByAddress($address) } catch { $acct = $null }
     if (-not $acct) {
         $acct = $domain.Accounts.Add()
@@ -22,6 +26,7 @@ function Set-AdMailbox($domain, $address, $netbios, $sam) {
     $acct.IsAD       = $true
     $acct.ADDomain   = $netbios
     $acct.ADUsername = $sam
+    if ($null -ne $maxSize) { $acct.MaxSize = [int]$maxSize }
     $acct.Active     = $true
     $acct.Save()
 }
@@ -52,7 +57,15 @@ foreach ($d in $domains) {
             $sam = [string]$r.Properties['samaccountname'][0]
             if (-not $sam) { continue }
             $address = ($sam.ToLower()) + '@' + $d.name
-            Set-AdMailbox $domain $address $netbios $sam
+            Set-AdMailbox $domain $address $netbios $sam $d.ad_max_size
+        }
+    }
+
+    # --- Listed AD usernames (address = user@domain) -------------------------
+    if ($d.PSObject.Properties.Name -contains 'ad_accounts') {
+        $adDomain = if ($d.ad_domain) { $d.ad_domain } else { $d.name }
+        foreach ($u in $d.ad_accounts) {
+            Set-AdMailbox $domain "$u@$($d.name)" $adDomain $u $d.ad_max_size
         }
     }
 
