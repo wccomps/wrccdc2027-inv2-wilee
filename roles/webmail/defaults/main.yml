@@ -1,0 +1,36 @@
+---
+# --- XAMPP (Apache + PHP only) -------------------------------------------------
+xampp_installer_url: "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.5.12/xampp-windows-x64-8.5.12-0-VS17-installer.exe"
+xampp_installer_dest: 'C:\Windows\Temp\{{ xampp_installer_url | basename }}'
+xampp_dir: 'C:\xampp'
+# Everything except Apache + PHP; the bundled MySQL/phpMyAdmin etc. aren't needed.
+xampp_disabled_components: xampp_mysql,xampp_filezilla,xampp_mercury,xampp_tomcat,xampp_perl,xampp_phpmyadmin,xampp_webalizer,xampp_sendmail
+xampp_apache_service: Apache2.4
+xampp_php_extensions: [intl, fileinfo, zip]
+php_timezone: America/Los_Angeles
+
+# --- Roundcube -----------------------------------------------------------------
+roundcube_version: "1.6.9"
+roundcube_url: "https://github.com/roundcube/roundcubemail/releases/download/{{ roundcube_version }}/roundcubemail-{{ roundcube_version }}-complete.tar.gz"
+roundcube_dir: 'C:\roundcube'     # served as the Apache site root
+roundcube_product_name: Webmail
+roundcube_imap_host: "localhost:143"
+roundcube_smtp_host: "localhost:587"
+roundcube_username_domain: ""     # lets users log in without "@domain"
+roundcube_des_key: ""             # exactly 24 characters; set per environment
+
+# Database on marvin's MariaDB; credentials come from Vault, never from here.
+roundcube_db_host: marvin.acme.anvil
+roundcube_db_port: 3306
+roundcube_db_name: roundcube
+
+# --- Vault Agent ---------------------------------------------------------------
+vault_version: "2.2.1"           # bump to upgrade; the role swaps vault.exe and restarts the agent
+vault_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_windows_amd64.zip"
+vault_addr: "http://marvin.acme.anvil:8200"
+vault_agent_dir: 'C:\vault-agent'
+vault_agent_service: VaultAgentRoundcube
+# AppRole from marvin (wiki "Onboarding a Service", APP=roundcube). The agent
+# reads db/static-creds/roundcube (see files/roundcube-db.ctmpl).
+roundcube_vault_role_id: ""
+roundcube_vault_secret_id: ""

@@ -1,0 +1,23 @@
+<?php
+
+// Vault rotates the DB password; Vault Agent re-renders this JSON file and it
+// is read on every request, so a rotation needs no restart.
+$vault_db = json_decode((string) @file_get_contents('{{ vault_agent_dir | replace("\\", "/") }}/roundcube-db.json'), true) ?: [];
+
+$config = [];
+$config['db_dsnw'] = 'mysql://' . rawurlencode($vault_db['username'] ?? '') . ':'
+    . rawurlencode($vault_db['password'] ?? '')
+    . '@{{ roundcube_db_host }}:{{ roundcube_db_port }}/{{ roundcube_db_name }}';
+
+// hMailServer on this host; SMTP authenticates as the logged-in user.
+$config['imap_host'] = '{{ roundcube_imap_host }}';
+$config['smtp_host'] = '{{ roundcube_smtp_host }}';
+$config['smtp_user'] = '%u';
+$config['smtp_pass'] = '%p';
+$config['username_domain'] = '{{ roundcube_username_domain }}';
+
+$config['product_name'] = '{{ roundcube_product_name }}';
+$config['des_key'] = '{{ roundcube_des_key }}';
+$config['skin'] = 'elastic';
+$config['plugins'] = [];
+$config['enable_installer'] = false;

@@ -1,0 +1,22 @@
+---
+# One file per step so each can be run and checked on its own, in order:
+#   --tags webmail_vault      Vault Agent renders the DB credential
+#   --tags webmail_xampp      Apache + PHP service
+#   --tags webmail_roundcube  Roundcube files + config
+#   --tags webmail_db         create Roundcube's tables on marvin (once)
+# --tags webmail runs all four.
+- name: Vault Agent
+  ansible.builtin.import_tasks: vault_agent.yml
+  tags: webmail_vault
+
+- name: XAMPP
+  ansible.builtin.import_tasks: xampp.yml
+  tags: webmail_xampp
+
+- name: Roundcube
+  ansible.builtin.import_tasks: roundcube.yml
+  tags: webmail_roundcube
+
+- name: Roundcube DB schema
+  ansible.builtin.import_tasks: db_seed.yml
+  tags: webmail_db

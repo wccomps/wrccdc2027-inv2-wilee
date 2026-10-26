@@ -1,0 +1,75 @@
+---
+# XAMPP: Apache + PHP, serving roundcube_dir as the site root.
+- name: Download XAMPP installer
+  ansible.windows.win_get_url:
+    url: "{{ xampp_installer_url }}"
+    dest: "{{ xampp_installer_dest }}"
+    force: false
+
+- name: Install XAMPP (Apache + PHP only)
+  ansible.windows.win_package:
+    path: "{{ xampp_installer_dest }}"
+    arguments: >-
+      --mode unattended --unattendedmodeui none
+      --prefix {{ xampp_dir }} --disable-components {{ xampp_disabled_components }}
+    creates_path: "{{ xampp_dir }}\\apache\\bin\\httpd.exe"
+
+- name: Enable PHP extensions
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\php\\php.ini"
+    regexp: '^;?extension={{ item }}\s*$'
+    line: "extension={{ item }}"
+  loop: "{{ xampp_php_extensions }}"
+  notify: Restart Apache
+
+- name: Set PHP timezone
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\php\\php.ini"
+    regexp: '^;?date\.timezone\s*='
+    line: "date.timezone = {{ php_timezone }}"
+  notify: Restart Apache
+
+# Apache won't start if its DocumentRoot is missing, so create it here even
+# though Roundcube is extracted in the next step.
+- name: Create Roundcube directory
+  ansible.windows.win_file:
+    path: "{{ roundcube_dir }}"
+    state: directory
+
+# With backrefs, win_lineinfile replaces only the matched text, so each pattern
+# must match the whole line. They also match our own value, so reruns are
+# no-ops and nothing gets appended.
+- name: Point Apache DocumentRoot at Roundcube
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\apache\\conf\\httpd.conf"
+    regexp: '^DocumentRoot\s.*$'
+    line: 'DocumentRoot "{{ roundcube_dir_fwd }}"'
+    backrefs: true
+  notify: Restart Apache
+
+- name: Point Apache's DocumentRoot <Directory> at Roundcube
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\apache\\conf\\httpd.conf"
+    regexp: '^<Directory "({{ xampp_dir_fwd | regex_escape }}/htdocs|{{ roundcube_dir_fwd | regex_escape }})">.*$'
+    line: '<Directory "{{ roundcube_dir_fwd }}">'
+    backrefs: true
+  notify: Restart Apache
+
+- name: Test Apache config
+  ansible.windows.win_command: '"{{ xampp_dir }}\apache\bin\httpd.exe" -t'
+  changed_when: false
+
+- name: Check for Apache service
+  ansible.windows.win_service_info:
+    name: "{{ xampp_apache_service }}"
+  register: apache_svc
+
+- name: Register Apache as a Windows service
+  ansible.windows.win_command: '"{{ xampp_dir }}\apache\bin\httpd.exe" -k install -n "{{ xampp_apache_service }}"'
+  when: not apache_svc.exists
+
+- name: Ensure Apache is running and set to auto-start
+  ansible.windows.win_service:
+    name: "{{ xampp_apache_service }}"
+    start_mode: auto
+    state: started

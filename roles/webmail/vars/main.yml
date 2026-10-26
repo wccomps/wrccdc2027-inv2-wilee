@@ -1,0 +1,7 @@
+---
+# Forward-slash forms of the Windows paths, for Apache config. ansible-core
+# 2.20 doesn't process escapes in inline YAML templates, so the backslash is
+# held in its own var rather than written as "\\".
+_bs: '\'
+xampp_dir_fwd: '{{ xampp_dir | replace(_bs, "/") }}'
+roundcube_dir_fwd: '{{ roundcube_dir | replace(_bs, "/") }}'

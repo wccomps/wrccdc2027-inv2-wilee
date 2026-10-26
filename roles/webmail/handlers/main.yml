@@ -1,0 +1,10 @@
+---
+- name: Restart Apache
+  ansible.windows.win_service:
+    name: "{{ xampp_apache_service }}"
+    state: restarted
+
+- name: Restart Vault Agent
+  ansible.windows.win_service:
+    name: "{{ vault_agent_service }}"
+    state: restarted

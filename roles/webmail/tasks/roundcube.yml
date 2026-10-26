@@ -1,0 +1,51 @@
+---
+# Roundcube: files + config. Needs the XAMPP step (Apache serves it).
+- name: Fail early if des_key is not set
+  ansible.builtin.assert:
+    that: roundcube_des_key | length == 24
+    fail_msg: "Set roundcube_des_key to exactly 24 characters."
+
+- name: Create Roundcube directory
+  ansible.windows.win_file:
+    path: "{{ roundcube_dir }}"
+    state: directory
+
+- name: Download Roundcube
+  ansible.windows.win_get_url:
+    url: "{{ roundcube_url }}"
+    dest: 'C:\Windows\Temp\roundcube-{{ roundcube_version }}.tar.gz'
+    force: false
+
+# Only extracts into an empty dir; to upgrade, bump roundcube_version and
+# clear roundcube_dir (except config\config.inc.php) first.
+- name: Extract Roundcube
+  ansible.windows.win_command: tar -xzf C:\Windows\Temp\roundcube-{{ roundcube_version }}.tar.gz -C "{{ roundcube_dir }}" --strip-components=1
+  args:
+    creates: "{{ roundcube_dir }}\\index.php"
+
+# PHP 8.5 has a built-in array_first(), and Roundcube < 1.6.12 declares its own
+# unguarded, which is a fatal "Cannot redeclare". Apply 1.6.12's fix (wrap it in
+# function_exists) so older, deliberately vulnerable versions still run.
+- name: Guard Roundcube's array_first() for PHP 8.5
+  ansible.windows.win_powershell:
+    script: |
+      $f = '{{ roundcube_dir }}\program\lib\Roundcube\bootstrap.php'
+      $src = [IO.File]::ReadAllText($f)
+      # Already guarded (1.6.12+, or patched on an earlier run), or not declared at all.
+      if ($src -match "function_exists\('array_first'\)" -or $src -notmatch '(?m)^function array_first\(') {
+          $Ansible.Changed = $false; return
+      }
+      $patched = [regex]::Replace($src, '(?ms)^function array_first\(\$array\)\r?\n\{.*?^\}\r?\n',
+          { param($m) "if (!function_exists('array_first')) {`n" + $m.Value + "}`n" })
+      if ($patched -eq $src) { throw "array_first() not found in $f; check this Roundcube version" }
+      [IO.File]::WriteAllText($f, $patched)
+
+- name: Remove the web installer
+  ansible.windows.win_file:
+    path: "{{ roundcube_dir }}\\installer"
+    state: absent
+
+- name: Write Roundcube config
+  ansible.windows.win_template:
+    src: config.inc.php.j2
+    dest: "{{ roundcube_dir }}\\config\\config.inc.php"

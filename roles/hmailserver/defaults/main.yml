@@ -31,5 +31,5 @@ hmail_autoban_on_logon_failure: true
 
 # --- Paths / install options (usually fine as-is) -----------------------------
 hmail_installer_dest: 'C:\Windows\Temp\hMailServerSetup.exe'
-hmail_install_dir: 'C:\Program Files (x86)\hMailServer'
+hmail_install_dir: 'C:\Program Files\hMailServer'   # x64 installer; 32-bit builds use Program Files (x86)
 hmail_service_name: hMailServer

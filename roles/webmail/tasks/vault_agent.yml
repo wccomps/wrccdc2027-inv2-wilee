@@ -1,0 +1,88 @@
+---
+# Vault Agent: renders the rotating DB credential to a JSON file.
+- name: Fail early if the AppRole IDs are not set
+  ansible.builtin.assert:
+    that:
+      - roundcube_vault_role_id | length > 0
+      - roundcube_vault_secret_id | length > 0
+    fail_msg: "Set roundcube_vault_role_id and roundcube_vault_secret_id (AppRole from marvin)."
+
+- name: Create Vault Agent directory
+  ansible.windows.win_file:
+    path: "{{ vault_agent_dir }}"
+    state: directory
+
+- name: Download Vault
+  ansible.windows.win_get_url:
+    url: "{{ vault_url }}"
+    dest: "{{ vault_agent_dir }}\\vault_{{ vault_version }}.zip"
+    force: false
+
+- name: Check installed Vault version
+  ansible.windows.win_command: '"{{ vault_agent_dir }}\vault.exe" version'
+  register: vault_installed
+  changed_when: false
+  failed_when: false
+
+# Re-extracts whenever vault.exe is missing or isn't vault_version. The running
+# agent locks vault.exe, so stop it first; the handler starts it again.
+- name: Install vault.exe {{ vault_version }}
+  ansible.windows.win_shell: |
+    Stop-Service -Name '{{ vault_agent_service }}' -ErrorAction SilentlyContinue
+    Expand-Archive -Path '{{ vault_agent_dir }}\vault_{{ vault_version }}.zip' -DestinationPath '{{ vault_agent_dir }}' -Force
+  when: ('Vault v' ~ vault_version ~ ' ') not in (vault_installed.stdout | default(''))
+  notify: Restart Vault Agent
+
+- name: Write AppRole role ID
+  ansible.windows.win_copy:
+    content: "{{ roundcube_vault_role_id }}"
+    dest: "{{ vault_agent_dir }}\\roundcube-role-id"
+  no_log: true
+  notify: Restart Vault Agent
+
+- name: Write AppRole secret ID
+  ansible.windows.win_copy:
+    content: "{{ roundcube_vault_secret_id }}"
+    dest: "{{ vault_agent_dir }}\\roundcube-secret-id"
+  no_log: true
+  notify: Restart Vault Agent
+
+- name: Write credential template
+  ansible.windows.win_copy:
+    src: roundcube-db.ctmpl
+    dest: "{{ vault_agent_dir }}\\roundcube-db.ctmpl"
+  notify: Restart Vault Agent
+
+- name: Write Vault Agent config
+  ansible.windows.win_template:
+    src: vault-agent.hcl.j2
+    dest: "{{ vault_agent_dir }}\\agent.hcl"
+  notify: Restart Vault Agent
+
+- name: Run Vault Agent as a service
+  ansible.windows.win_service:
+    name: "{{ vault_agent_service }}"
+    display_name: Vault Agent - Roundcube
+    path: '"{{ vault_agent_dir }}\vault.exe" agent -config="{{ vault_agent_dir }}\agent.hcl"'
+    start_mode: auto
+    state: started
+
+- name: Apply pending Vault Agent restarts
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Vault Agent to render the DB credential
+  ansible.windows.win_wait_for:
+    path: "{{ vault_agent_dir }}\\roundcube-db.json"
+    timeout: 120
+
+# Username and rotation info only; the password stays out of the output.
+- name: Read rendered DB credential
+  ansible.windows.win_shell: >-
+    Get-Content '{{ vault_agent_dir }}\roundcube-db.json' -Raw | ConvertFrom-Json |
+    Select-Object username, last_vault_rotation, rotation_period, ttl | ConvertTo-Json -Compress
+  register: vault_rendered
+  changed_when: false
+
+- name: Show rendered DB credential
+  ansible.builtin.debug:
+    msg: "{{ vault_rendered.stdout | from_json }}"

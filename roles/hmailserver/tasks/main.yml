@@ -32,6 +32,13 @@
       AdminPassword: "{{ hmail_admin_password }}"
       DomainsJson: "{{ hmail_domains | to_json }}"
       AutoBanOnLogonFailure: "{{ hmail_autoban_on_logon_failure | bool }}"
+  # from_ad queries AD over LDAP. A plain NTLM WinRM logon can't pass
+  # credentials on to the DC (double hop), so re-logon locally via runas.
+  become: true
+  become_method: ansible.builtin.runas
+  become_user: "{{ ansible_user }}"
+  vars:
+    ansible_become_password: "{{ ansible_password }}"
   register: hmail_cfg
   changed_when: "'APPLIED' in (hmail_cfg.output | join(' '))"
   no_log: true

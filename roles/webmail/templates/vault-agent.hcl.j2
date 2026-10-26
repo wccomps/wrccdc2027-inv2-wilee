@@ -1,0 +1,25 @@
+{% set d = vault_agent_dir | replace('\\', '/') %}
+pid_file = "{{ d }}/agent.pid"
+
+vault {
+  address = "{{ vault_addr }}"
+}
+
+auto_auth {
+  method "approle" {
+    config = {
+      role_id_file_path                   = "{{ d }}/roundcube-role-id"
+      secret_id_file_path                 = "{{ d }}/roundcube-secret-id"
+      remove_secret_id_file_after_reading = false
+    }
+  }
+}
+
+template_config {
+  static_secret_render_interval = "30s"
+}
+
+template {
+  source      = "{{ d }}/roundcube-db.ctmpl"
+  destination = "{{ d }}/roundcube-db.json"
+}

@@ -1,0 +1,21 @@
+---
+# Create Roundcube's tables on marvin if they don't exist yet. Needs all three
+# earlier steps: the Vault credential, PHP, and Roundcube's SQL scripts.
+- name: Copy DB schema check script
+  ansible.windows.win_copy:
+    src: dbcheck.php
+    dest: "{{ vault_agent_dir }}\\dbcheck.php"
+
+- name: Check whether Roundcube's schema exists on marvin
+  ansible.windows.win_command: >-
+    "{{ xampp_dir }}\php\php.exe" "{{ vault_agent_dir }}\dbcheck.php"
+    "{{ vault_agent_dir }}\roundcube-db.json" {{ roundcube_db_host }} {{ roundcube_db_port }} {{ roundcube_db_name }}
+  register: rc_schema
+  changed_when: false
+
+- name: Create Roundcube's schema
+  ansible.windows.win_command: >-
+    "{{ xampp_dir }}\php\php.exe" bin\initdb.sh --dir=SQL
+  args:
+    chdir: "{{ roundcube_dir }}"
+  when: "'missing' in rc_schema.stdout"

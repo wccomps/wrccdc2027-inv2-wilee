@@ -1,0 +1,1 @@
+{{ with secret "db/static-creds/roundcube" }}{{ .Data | toJSON }}{{ end }}
