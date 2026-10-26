@@ -1,0 +1,53 @@
+---
+# hMailServer PHPWebAdmin at /admin/, served straight from hMailServer's install
+# dir so it always matches the server version. Needs the XAMPP step. Log in as
+# "Administrator" with the hMailServer admin password.
+- name: Check PHPWebAdmin is installed
+  ansible.windows.win_stat:
+    path: "{{ phpwebadmin_dir }}\\config-dist.php"
+  register: pwa_dist
+
+- name: Fail if PHPWebAdmin is missing
+  ansible.builtin.assert:
+    that: pwa_dist.stat.exists
+    fail_msg: "{{ phpwebadmin_dir }} not found; reinstall hMailServer with the PHPWebAdmin component."
+
+# PHPWebAdmin talks to hMailServer over COM.
+- name: Enable PHP COM extension
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\php\\php.ini"
+    regexp: '^;?extension=(php_)?com_dotnet(\.dll)?\s*$'
+    line: "extension=com_dotnet"
+  notify: Restart Apache
+
+# Start from the shipped defaults once; then only rooturl is managed.
+- name: Create config.php from config-dist.php
+  ansible.windows.win_copy:
+    src: "{{ phpwebadmin_dir }}\\config-dist.php"
+    dest: "{{ phpwebadmin_dir }}\\config.php"
+    remote_src: true
+    force: false
+
+# Unindented line only; the indented one in config-dist.php is a comment example.
+- name: Set PHPWebAdmin rooturl
+  community.windows.win_lineinfile:
+    path: "{{ phpwebadmin_dir }}\\config.php"
+    regexp: '^\$hmail_config\[''rooturl''\]\s*=.*$'
+    line: "$hmail_config['rooturl']                        = \"{{ phpwebadmin_rooturl }}\";"
+    backrefs: true
+
+- name: Write Apache config for PHPWebAdmin
+  ansible.windows.win_template:
+    src: httpd-phpwebadmin.conf.j2
+    dest: "{{ xampp_dir }}\\apache\\conf\\extra\\httpd-phpwebadmin.conf"
+  notify: Restart Apache
+
+- name: Include PHPWebAdmin config in httpd.conf
+  community.windows.win_lineinfile:
+    path: "{{ xampp_dir }}\\apache\\conf\\httpd.conf"
+    line: 'Include "conf/extra/httpd-phpwebadmin.conf"'
+  notify: Restart Apache
+
+- name: Test Apache config
+  ansible.windows.win_command: '"{{ xampp_dir }}\apache\bin\httpd.exe" -t'
+  changed_when: false

@@ -4,7 +4,8 @@
 #   --tags webmail_xampp      Apache + PHP service
 #   --tags webmail_roundcube  Roundcube files + config
 #   --tags webmail_db         create Roundcube's tables on marvin (once)
-# --tags webmail runs all four.
+#   --tags webmail_admin      hMailServer PHPWebAdmin at /admin/
+# --tags webmail runs all of them.
 - name: Vault Agent
   ansible.builtin.import_tasks: vault_agent.yml
   tags: webmail_vault
@@ -20,3 +21,7 @@
 - name: Roundcube DB schema
   ansible.builtin.import_tasks: db_seed.yml
   tags: webmail_db
+
+- name: PHPWebAdmin
+  ansible.builtin.import_tasks: phpwebadmin.yml
+  tags: webmail_admin

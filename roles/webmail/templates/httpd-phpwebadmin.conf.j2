@@ -1,0 +1,12 @@
+Alias "{{ phpwebadmin_path }}" "{{ phpwebadmin_dir | replace("\\", "/") }}/"
+
+# Without the slash the request falls through to Roundcube, whose .htaccess
+# forbids extensionless paths (403). mod_alias runs first, so redirect here.
+RedirectMatch 301 "^{{ phpwebadmin_path | regex_replace('/$', '') }}$" "{{ phpwebadmin_path }}"
+
+<Directory "{{ phpwebadmin_dir | replace("\\", "/") }}">
+    Options None
+    AllowOverride None
+    Require all granted
+    DirectoryIndex index.php
+</Directory>

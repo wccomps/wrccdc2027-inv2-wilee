@@ -24,6 +24,11 @@ roundcube_db_host: marvin.acme.anvil
 roundcube_db_port: 3306
 roundcube_db_name: roundcube
 
+# --- hMailServer PHPWebAdmin ----------------------------------------------------
+phpwebadmin_dir: 'C:\Program Files\hMailServer\PHPWebAdmin'
+phpwebadmin_path: /admin/        # URL path; keep the trailing slash
+phpwebadmin_rooturl: "{{ phpwebadmin_path }}"   # PHPWebAdmin wants a trailing slash
+
 # --- Vault Agent ---------------------------------------------------------------
 vault_version: "2.2.1"           # bump to upgrade; the role swaps vault.exe and restarts the agent
 vault_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_windows_amd64.zip"
