@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  background: #f3e2c0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.grid img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+/* Single GIF: fit to the window, centered; click to go back. */
+.full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.full img {
+  max-width: 100vw;
+  max-height: 100vh;
+  object-fit: contain;
+}
