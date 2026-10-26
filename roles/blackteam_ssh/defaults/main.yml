@@ -1,0 +1,13 @@
+---
+# Black team SSH access: sshd trusts certificates signed by the Vault SSH CA.
+# A cert works for a Windows account when one of its principals is listed in
+# that account's principals file.
+blackteam_ssh_ca_pubkey: >-
+  ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCbPlLEk1ROabzZuQgVDMTbLBHcXHUpXj3CXoeDRsasow6i/1QqcriAjK6aCMVaMbSsNpk+bvFa4Nu6En6KU7YtkR6MtMa7UriLQvM6CmQgJDiGz1iV3E9Y3Z93rAYBEu1Yn8r5QacqTkv8OiS4cdcg/JjxQFkHkvUCkT7peX0drfzUPq1vPkOneXg773U099QhguQNZjlttQezam+FmYlsUyGUqClMp1X9++v8cTspuzpWdEBhfZMIlRXsqLIOG8kiT/Nvgw3F12hJ/lHUk+mOn5esE3VewLbXSw8PgMQQily7RPzZfv+FCmuGaMMGVYmB9B+ZIBskLwdvzX5xU+m6R38gavh8h3qLgLUPc2w8kqtkIDZ6I+3dHOPWepUXGfnVSrJkmoDZuSGQNMYElUSNAgcQgBhvLv8/aDP9SlW3dU817UREFXLIXJC1+/6lK/Dhbw7Bnv5rxgpgikLkC9CvXCwIM/NNSZ6Gd9bkP1r759+oqmZNSZQZSnde/IecB1AuhGVTZp957QCBJJe7vtd2Ke3qA0YYfxc2wHLk2zIW0noUfqIhMi8A1m+XmOhIsCGeWQH5SY5KsizS1MW/y1IF69EFmjKF0Tr7xawng3FwSM4AmcOpuK6hypQ9BwadXRZrZMauW6UaIjnbYmK9gZGA1/4uCxT+RaWlokw/qvVrrQ==
+
+# Windows account -> principal(s) allowed to log in as it. Competition hosts use
+# "competition-infrastructure"; core hosts use "core-infrastructure".
+blackteam_ssh_principals:
+  Administrator: competition-infrastructure
+
+blackteam_ssh_dir: 'C:\ProgramData\ssh'

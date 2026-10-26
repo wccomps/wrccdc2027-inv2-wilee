@@ -1,0 +1,37 @@
+---
+# Assumes OpenSSH Server is already installed and running (set up by hand).
+
+# The firewall is off on this box, but keep the rule so SSH still works if
+# someone turns it back on.
+- name: Allow SSH on every network profile
+  ansible.windows.win_powershell:
+    script: |
+      $rule = Get-NetFirewallRule -Name OpenSSH-Server-In-TCP -ErrorAction SilentlyContinue
+      if ($rule -and $rule.Profile -eq 'Any' -and $rule.Enabled -eq 'True') { $Ansible.Changed = $false; return }
+      if ($rule) { Set-NetFirewallRule -Name OpenSSH-Server-In-TCP -Profile Any -Enabled True }
+      else { New-NetFirewallRule -Name OpenSSH-Server-In-TCP -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -Profile Any | Out-Null }
+
+- name: Write Vault SSH CA public key
+  ansible.windows.win_copy:
+    content: "{{ blackteam_ssh_ca_pubkey }}\n"
+    dest: "{{ blackteam_ssh_dir }}\\vault-ca.pub"
+  notify: Restart sshd
+
+- name: Create principals directory
+  ansible.windows.win_file:
+    path: "{{ blackteam_ssh_dir }}\\auth_principals"
+    state: directory
+
+- name: Write principals file per account
+  ansible.windows.win_copy:
+    content: "{{ (item.value is string) | ternary([item.value], item.value) | join('\n') }}\n"
+    dest: "{{ blackteam_ssh_dir }}\\auth_principals\\{{ item.key }}"
+  loop: "{{ blackteam_ssh_principals | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  notify: Restart sshd
+
+- name: Trust the CA in sshd_config
+  ansible.windows.win_powershell:
+    script: "{{ lookup('file', 'sshd_config_ca.ps1') }}"
+  notify: Restart sshd

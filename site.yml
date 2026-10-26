@@ -16,3 +16,4 @@
     - { role: hmailserver, tags: hmailserver }
     - { role: webmail, tags: webmail }
     - { role: windows_exporter, tags: windows_exporter }
+    - { role: blackteam_ssh, tags: blackteam_ssh }

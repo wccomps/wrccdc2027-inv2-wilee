@@ -1,0 +1,11 @@
+---
+- name: Validate sshd config
+  ansible.windows.win_command: 'C:\Windows\System32\OpenSSH\sshd.exe -t'
+  changed_when: false
+  listen: Restart sshd
+
+- name: Restart sshd service
+  ansible.windows.win_service:
+    name: sshd
+    state: restarted
+  listen: Restart sshd
