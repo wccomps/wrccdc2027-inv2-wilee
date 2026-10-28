@@ -16,7 +16,6 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: gitea.acme.anvil
   IMAGE: gitea.acme.anvil/wile.coyote/ansible-runner
 
 jobs:
@@ -37,18 +36,22 @@ jobs:
             ansible-galaxy collection list ansible.windows
           '
 
+      # Tag locally first: deploys use elmer's local :latest (force_pull off).
+      - name: Tag
+        run: docker tag "$IMAGE:candidate" "$IMAGE:latest"
+
+      # skopeo, not docker push: with elmer's containerd image store, docker
+      # push tries HTTPS and won't fall back to HTTP. skopeo does with
+      # --dest-tls-verify=false. It reads the image straight from the daemon.
       - name: Push
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
-          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
+          apt-get update -qq && apt-get install -y -qq skopeo
           tag=$(date -u +%Y%m%d-%H%M)
-          docker tag "$IMAGE:candidate" "$IMAGE:$tag"
-          docker tag "$IMAGE:candidate" "$IMAGE:latest"
-          docker push "$IMAGE:$tag"
-          docker push "$IMAGE:latest"
-
-      - name: Log out
-        if: always()
-        run: docker logout "$REGISTRY" || true
+          for t in "$tag" latest; do
+            skopeo copy --dest-tls-verify=false --dest-creds "$OWNER:$REGISTRY_TOKEN" \
+              "docker-daemon:$IMAGE:candidate" "docker://$IMAGE:$t"
+          done
