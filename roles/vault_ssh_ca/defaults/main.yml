@@ -1,0 +1,10 @@
+---
+# Our own Vault SSH CA on 192.168.220.199. Its key and principals go into the
+# same files blackteam_ssh sets up, since sshd only reads one CA keys file.
+vault_ssh_ca_pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICywUN8tFxBhCgg+MFBs6D6ixtIGmZ5RGvvvcyrmP3Fz
+
+# Windows account -> list of principals allowed to log in as it. Must match
+# the principals the Vault role puts in the certs (default_user /
+# valid_principals).
+vault_ssh_ca_principals:
+  Administrator: [wilee]

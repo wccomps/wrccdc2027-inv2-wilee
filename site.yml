@@ -17,3 +17,4 @@
     - { role: webmail, tags: webmail }
     - { role: windows_exporter, tags: windows_exporter }
     - { role: blackteam_ssh, tags: blackteam_ssh }
+    - { role: vault_ssh_ca, tags: vault_ssh_ca }

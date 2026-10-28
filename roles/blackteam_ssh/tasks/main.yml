@@ -11,10 +11,15 @@
       if ($rule) { Set-NetFirewallRule -Name OpenSSH-Server-In-TCP -Profile Any -Enabled True }
       else { New-NetFirewallRule -Name OpenSSH-Server-In-TCP -DisplayName 'OpenSSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -Profile Any | Out-Null }
 
-- name: Write Vault SSH CA public key
-  ansible.windows.win_copy:
-    content: "{{ blackteam_ssh_ca_pubkey }}\n"
-    dest: "{{ blackteam_ssh_dir }}\\vault-ca.pub"
+# Line-based (not win_copy) so other roles (vault_ssh_ca) can add their own
+# CA keys and principals to the same files. sshd only honors the first
+# TrustedUserCAKeys / AuthorizedPrincipalsFile, so every CA has to share them.
+- name: Add Vault SSH CA public key
+  community.windows.win_lineinfile:
+    path: "{{ blackteam_ssh_dir }}\\vault-ca.pub"
+    line: "{{ blackteam_ssh_ca_pubkey }}"
+    create: true
+    newline: unix
   notify: Restart sshd
 
 - name: Create principals directory
@@ -22,13 +27,15 @@
     path: "{{ blackteam_ssh_dir }}\\auth_principals"
     state: directory
 
-- name: Write principals file per account
-  ansible.windows.win_copy:
-    content: "{{ (item.value is string) | ternary([item.value], item.value) | join('\n') }}\n"
-    dest: "{{ blackteam_ssh_dir }}\\auth_principals\\{{ item.key }}"
-  loop: "{{ blackteam_ssh_principals | dict2items }}"
+- name: Add principals per account
+  community.windows.win_lineinfile:
+    path: "{{ blackteam_ssh_dir }}\\auth_principals\\{{ item.0.key }}"
+    line: "{{ item.1 }}"
+    create: true
+    newline: unix
+  loop: "{{ blackteam_ssh_principals | dict2items | subelements('value') }}"
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ item.0.key }}: {{ item.1 }}"
   notify: Restart sshd
 
 - name: Trust the CA in sshd_config

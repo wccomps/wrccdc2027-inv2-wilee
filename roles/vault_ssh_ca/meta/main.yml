@@ -1,0 +1,5 @@
+---
+# blackteam_ssh owns the sshd_config lines, the principals directory and the
+# "Restart sshd" handler.
+dependencies:
+  - role: blackteam_ssh

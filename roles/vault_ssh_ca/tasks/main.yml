@@ -1,0 +1,19 @@
+---
+- name: Add our Vault SSH CA public key
+  community.windows.win_lineinfile:
+    path: "{{ blackteam_ssh_dir }}\\vault-ca.pub"
+    line: "{{ vault_ssh_ca_pubkey }}"
+    create: true
+    newline: unix
+  notify: Restart sshd
+
+- name: Add principals per account
+  community.windows.win_lineinfile:
+    path: "{{ blackteam_ssh_dir }}\\auth_principals\\{{ item.0.key }}"
+    line: "{{ item.1 }}"
+    create: true
+    newline: unix
+  loop: "{{ vault_ssh_ca_principals | dict2items | subelements('value') }}"
+  loop_control:
+    label: "{{ item.0.key }}: {{ item.1 }}"
+  notify: Restart sshd
