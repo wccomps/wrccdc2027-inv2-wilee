@@ -1,0 +1,29 @@
+# One-time (manual) setup of the gallery's WinSW service on wilee
+# (deploy/setup.yml). Kept out of the deploy workflow on purpose: deploy
+# should fail if the service goes missing, not quietly recreate it.
+name: setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: elmer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.forgejo/actions/wilee-ssh
+        with:
+          vault-addr: ${{ vars.VAULT_ADDR }}
+          role-id: ${{ secrets.VAULT_ROLE_ID }}
+          secret-id: ${{ secrets.VAULT_SECRET_ID }}
+
+      - name: Set up gallery service
+        working-directory: deploy
+        env:
+          SSH_DIR: ${{ runner.temp }}/ssh
+        run: ansible-playbook setup.yml
+
+      - name: Clean up key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/ssh"

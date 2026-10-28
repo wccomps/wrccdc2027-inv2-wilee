@@ -1,0 +1,15 @@
+<service>
+  <id>{{ gallery_service }}</id>
+  <name>Gallery</name>
+  <description>Gallery</description>
+  <executable>{{ gallery_dir }}\venv\Scripts\python.exe</executable>
+  <arguments>-m waitress --listen=0.0.0.0:{{ gallery_port }} app:app</arguments>
+  <workingdirectory>{{ gallery_dir }}</workingdirectory>
+  <startmode>Automatic</startmode>
+  <onfailure action="restart" delay="5 sec"/>
+  <logpath>{{ gallery_log_dir }}</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>
