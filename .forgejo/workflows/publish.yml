@@ -42,7 +42,8 @@ jobs:
 
       # skopeo, not docker push: with elmer's containerd image store, docker
       # push tries HTTPS and won't fall back to HTTP. skopeo does with
-      # --dest-tls-verify=false. It reads the image straight from the daemon.
+      # --dest-tls-verify=false. 22.04's skopeo is too old for the daemon API
+      # (docker-daemon: transport), so go through a docker save tarball.
       - name: Push
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
@@ -50,10 +51,13 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update -qq && apt-get install -y -qq skopeo
+          tar="$RUNNER_TEMP/image.tar"
+          trap 'rm -f "$tar"' EXIT
+          docker save -o "$tar" "$IMAGE:candidate"
           tag=$(date -u +%Y%m%d-%H%M)
           for t in "$tag" latest; do
             skopeo copy --dest-tls-verify=false --dest-creds "$OWNER:$REGISTRY_TOKEN" \
-              "docker-daemon:$IMAGE:candidate" "docker://$IMAGE:$t"
+              "docker-archive:$tar" "docker://$IMAGE:$t"
           done
 
       # Builds run on elmer's own Docker, and each rebuild orphans the previous
