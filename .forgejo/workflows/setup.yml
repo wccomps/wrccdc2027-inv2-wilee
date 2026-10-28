@@ -8,7 +8,10 @@ on:
 
 jobs:
   setup:
-    runs-on: elmer
+    runs-on: ubuntu-latest
+    container:
+      # Built by the ansible-runner repo; has vault + ansible baked in.
+      image: gitea.acme.anvil/wile.coyote/ansible-runner:latest
     steps:
       - uses: actions/checkout@v4
 

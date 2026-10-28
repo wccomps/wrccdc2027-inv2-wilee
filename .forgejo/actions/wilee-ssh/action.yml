@@ -51,7 +51,3 @@ runs:
         if [ "$fp" != "$HOSTKEY_FP" ]; then
           echo "wilee host key mismatch: got $fp" >&2; exit 1
         fi
-
-    - name: Install Ansible collections
-      shell: bash
-      run: ansible-galaxy collection install ansible.windows
