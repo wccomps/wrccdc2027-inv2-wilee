@@ -15,3 +15,9 @@ included components:
 - git / python via chocolatey
 - configuring ssh ca (black team / marvin vault)
 - prometheus windows exporter
+
+sub-repositories:
+- gallery app (custom python app with wile e coyote gifs)
+- ansible-runner (dockerfile with forgejo action to build a docker container w/ hashicorp vault cli and ansible preinstalled)
+
+commits for sub-repositories are merged with the commit history of the main repo.
