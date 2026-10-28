@@ -4,8 +4,6 @@ gallery_log_dir: 'C:\inetpub\logs\gallery'
 gallery_service: gallery
 gallery_port: 8080
 
-# WinSW wrapper: <id>.exe + <id>.xml side by side. The x64 build is
-# self-contained (no .NET install needed).
 gallery_winsw_version: "2.12.0"
 gallery_winsw_url: "https://github.com/winsw/winsw/releases/download/v{{ gallery_winsw_version }}/WinSW-x64.exe"
 gallery_service_dir: 'C:\inetpub\gallery-service'
