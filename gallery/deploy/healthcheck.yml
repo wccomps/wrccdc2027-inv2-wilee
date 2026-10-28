@@ -1,0 +1,37 @@
+---
+- name: Health check gallery
+  hosts: wilee
+  gather_facts: false
+  vars_files: vars.yml
+
+  tasks:
+    - name: Check SSH connectivity
+      ansible.windows.win_ping:
+
+    - name: Read the gallery service
+      ansible.windows.win_service_info:
+        name: "{{ gallery_service }}"
+      register: svc
+
+    - name: Service exists, runs, starts on boot, and is our WinSW wrapper
+      ansible.builtin.assert:
+        that:
+          - svc.exists
+          - svc.services[0].state == 'started'
+          - svc.services[0].start_mode == 'auto'
+          - (gallery_service_dir ~ '\\' ~ gallery_service ~ '.exe') | lower in svc.services[0].path | lower
+        # Conditions run in order, so services[0] is only read once it exists.
+        fail_msg: >-
+          {% if svc.exists %}gallery service unhealthy: state={{ svc.services[0].state }}
+          start_mode={{ svc.services[0].start_mode }} path={{ svc.services[0].path }}
+          {% else %}gallery service is missing{% endif %}
+        quiet: true
+
+    # The index links every GIF in static/gifs, so this also catches an empty
+    # or missing gallery, not just a 200.
+    - name: App serves the gallery
+      ansible.windows.win_uri:
+        url: "http://localhost:{{ gallery_port }}/"
+        return_content: true
+      register: page
+      failed_when: page.status_code | default(0) != 200 or 'href="/gif/' not in page.content | default('')

@@ -1,7 +1,7 @@
 all:
   hosts:
     wilee:
-      ansible_host: 192.168.220.112
+      ansible_host: wilee.acme.anvil
       ansible_user: Administrator
       ansible_connection: ssh
       ansible_shell_type: cmd

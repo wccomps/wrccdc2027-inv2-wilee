@@ -11,7 +11,7 @@ inputs:
   secret-id:
     required: true
   host:
-    default: 192.168.220.112
+    default: wilee.acme.anvil
   # Pin wilee's host key so a spoofed box can't receive the deploy.
   hostkey-fp:
     default: SHA256:+zuseALdEesj7GAvOslwscK89jcr8d0QPndtHu7Ho4U

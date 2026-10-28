@@ -1,0 +1,37 @@
+name: healthcheck
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+env:
+  APP_URL: http://wilee.acme.anvil:8080/
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    container:
+      image: gitea.acme.anvil/wile.coyote/ansible-runner:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.forgejo/actions/wilee-ssh
+        with:
+          vault-addr: ${{ vars.VAULT_ADDR }}
+          role-id: ${{ vars.VAULT_ROLE_ID }}
+          secret-id: ${{ vars.VAULT_SECRET_ID }}
+
+      - name: Check service and app on wilee
+        working-directory: deploy
+        env:
+          SSH_DIR: ${{ runner.temp }}/ssh
+        run: ansible-playbook healthcheck.yml
+
+      # Check that the firewall doesn't block reaching the site externally
+      - name: Check app from the network
+        run: curl -fsS --max-time 10 -o /dev/null -w '%{http_code}\n' "$APP_URL"
+
+      - name: Clean up key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/ssh"
