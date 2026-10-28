@@ -1,5 +1,5 @@
 ---
-# Set up gallery windows service
+# Set up gallery windows service. Downloads WinSW and configures a service file for it
 - name: Set up gallery service
   hosts: wilee
   gather_facts: false

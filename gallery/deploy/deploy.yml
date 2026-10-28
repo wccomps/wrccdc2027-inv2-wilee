@@ -1,5 +1,5 @@
 ---
-# Redeploy the gallery onto wilee
+# Redeploy the gallery onto wilee. Assumes setup has already been run (trigger it in Forgejo Actions)
 - name: Deploy gallery
   hosts: wilee
   gather_facts: false
