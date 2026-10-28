@@ -16,7 +16,8 @@ jobs:
 
 ## One-time setup on elmer
 
-`/etc/data/config.yaml` (restart the runner after):
+Add a top-level `container:` section to `/etc/data/config.yaml`, next to the
+existing `server:` and `runner:` (restart the runner after):
 
 ```yaml
 container:
