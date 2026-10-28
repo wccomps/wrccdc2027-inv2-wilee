@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+  <a href="{{ url_for('index') }}" class="full">
+    <img src="{{ url_for('static', filename='gifs/' ~ gif) }}" alt="">
+  </a>
+{% endblock %}

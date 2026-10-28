@@ -1,0 +1,49 @@
+# Deploy the gallery to wilee with Ansible over SSH (deploy/deploy.yml). Runs
+# on elmer, which has the vault CLI and ansible. The job fails if wilee can't
+# be reached, the service is missing or can't restart, or the app doesn't
+# answer. Run the "setup" workflow once first to create the service.
+#
+# Repo settings needed:
+#   secrets:   VAULT_ROLE_ID, VAULT_SECRET_ID
+#   variables: VAULT_ADDR (http://marvin.acme.anvil:8200)
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container:
+      # Built by the ansible-runner repo; has vault + ansible baked in.
+      image: gitea.acme.anvil/wile.coyote/ansible-runner:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.forgejo/actions/wilee-ssh
+        with:
+          vault-addr: ${{ vars.VAULT_ADDR }}
+          role-id: ${{ vars.VAULT_ROLE_ID }}
+          secret-id: ${{ vars.VAULT_SECRET_ID }}
+
+      - name: Stage app files
+        run: |
+          set -euo pipefail
+          # Tracked files only: no .git, venv, workflow or deploy files.
+          stage="$RUNNER_TEMP/gallery"
+          rm -rf "$stage" && mkdir -p "$stage"
+          git archive HEAD | tar -x -C "$stage"
+          rm -rf "$stage/.forgejo" "$stage/deploy"
+
+      - name: Deploy and restart service
+        working-directory: deploy
+        env:
+          SSH_DIR: ${{ runner.temp }}/ssh
+          STAGE_DIR: ${{ runner.temp }}/gallery
+        run: ansible-playbook deploy.yml
+
+      - name: Clean up key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/ssh" "$RUNNER_TEMP/gallery"

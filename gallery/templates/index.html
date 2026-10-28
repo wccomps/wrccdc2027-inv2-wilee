@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <main class="grid">
+    {% for g in gifs %}
+      <a href="{{ url_for('gif', name=g) }}">
+        <img src="{{ url_for('static', filename='gifs/' ~ g) }}" alt="" loading="lazy">
+      </a>
+    {% endfor %}
+  </main>
+{% endblock %}

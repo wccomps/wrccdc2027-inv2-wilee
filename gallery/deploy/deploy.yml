@@ -1,0 +1,43 @@
+---
+# Redeploy the gallery onto wilee
+- name: Deploy gallery
+  hosts: wilee
+  gather_facts: false
+  vars_files: vars.yml
+  vars:
+    stage_dir: "{{ lookup('env', 'STAGE_DIR') }}"
+
+  tasks:
+    - name: Check SSH connectivity
+      ansible.windows.win_ping:
+
+    - name: Make sure the gallery service exists
+      ansible.windows.win_service_info:
+        name: "{{ gallery_service }}"
+      register: svc
+      failed_when: not svc.exists
+
+    - name: Copy gallery files
+      ansible.windows.win_copy:
+        src: "{{ stage_dir }}/"
+        dest: "{{ gallery_dir }}\\"
+
+    - name: Install Python requirements
+      ansible.windows.win_command: '"{{ gallery_dir }}\venv\Scripts\python.exe" -m pip install -r requirements.txt'
+      args:
+        chdir: "{{ gallery_dir }}"
+      register: pip
+      changed_when: "'Successfully installed' in pip.stdout"
+
+    - name: Restart gallery service
+      ansible.windows.win_service:
+        name: "{{ gallery_service }}"
+        state: restarted
+
+    - name: Check the gallery responds
+      ansible.windows.win_uri:
+        url: "http://localhost:{{ gallery_port }}/"
+      register: page
+      retries: 10
+      delay: 3
+      until: page.status_code | default(0) == 200

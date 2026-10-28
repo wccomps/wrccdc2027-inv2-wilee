@@ -1,0 +1,41 @@
+---
+# Set up gallery windows service
+- name: Set up gallery service
+  hosts: wilee
+  gather_facts: false
+  vars_files: vars.yml
+
+  tasks:
+    - name: Create gallery directories
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ gallery_dir }}"
+        - "{{ gallery_log_dir }}"
+        - "{{ gallery_service_dir }}"
+
+    - name: Create gallery venv
+      ansible.windows.win_shell: |
+        $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+        python -m venv "{{ gallery_dir }}\venv"
+      args:
+        creates: "{{ gallery_dir }}\\venv\\Scripts\\python.exe"
+
+    - name: Download WinSW as the service wrapper
+      ansible.windows.win_get_url:
+        url: "{{ gallery_winsw_url }}"
+        dest: "{{ gallery_service_dir }}\\{{ gallery_service }}.exe"
+        force: false
+
+    - name: Write WinSW service config
+      ansible.windows.win_template:
+        src: gallery.xml.j2
+        dest: "{{ gallery_service_dir }}\\{{ gallery_service }}.xml"
+
+    - name: Register gallery service
+      ansible.windows.win_powershell:
+        script: |
+          if (Get-Service -Name '{{ gallery_service }}' -ErrorAction SilentlyContinue) { $Ansible.Changed = $false; return }
+          & '{{ gallery_service_dir }}\{{ gallery_service }}.exe' install
+          if ($LASTEXITCODE -ne 0) { throw "WinSW install failed ($LASTEXITCODE)" }
