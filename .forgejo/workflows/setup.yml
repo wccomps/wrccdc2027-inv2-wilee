@@ -18,8 +18,8 @@ jobs:
       - uses: ./.forgejo/actions/wilee-ssh
         with:
           vault-addr: ${{ vars.VAULT_ADDR }}
-          role-id: ${{ secrets.VAULT_ROLE_ID }}
-          secret-id: ${{ secrets.VAULT_SECRET_ID }}
+          role-id: ${{ vars.VAULT_ROLE_ID }}
+          secret-id: ${{ vars.VAULT_SECRET_ID }}
 
       - name: Set up gallery service
         working-directory: deploy
