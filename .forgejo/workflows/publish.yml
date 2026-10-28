@@ -1,0 +1,54 @@
+# Rebuild the ansible-runner image every 30 minutes and push it to the
+# Forgejo registry. A failed build (no internet, broken DNS) just fails this
+# run: the last good :latest stays in the registry and in elmer's Docker, so
+# deploys keep working offline.
+#
+# Repo settings needed:
+#   secrets: REGISTRY_TOKEN (Forgejo token with package write)
+# Runner needs the Docker socket mounted into job containers (see README).
+name: publish
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+env:
+  REGISTRY: gitea.acme.anvil
+  IMAGE: gitea.acme.anvil/wile.coyote/ansible-runner
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build --pull -t "$IMAGE:candidate" .
+
+      # Only replace :latest with an image that actually has the tools.
+      - name: Smoke test
+        run: |
+          docker run --rm "$IMAGE:candidate" sh -euc '
+            vault version
+            ansible --version
+            ansible-galaxy collection list ansible.windows
+          '
+
+      - name: Push
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
+          tag=$(date -u +%Y%m%d-%H%M)
+          docker tag "$IMAGE:candidate" "$IMAGE:$tag"
+          docker tag "$IMAGE:candidate" "$IMAGE:latest"
+          docker push "$IMAGE:$tag"
+          docker push "$IMAGE:latest"
+
+      - name: Log out
+        if: always()
+        run: docker logout "$REGISTRY" || true
