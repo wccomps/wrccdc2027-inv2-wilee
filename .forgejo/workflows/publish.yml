@@ -54,11 +54,11 @@ jobs:
           tar="$RUNNER_TEMP/image.tar"
           trap 'rm -f "$tar"' EXIT
           docker save -o "$tar" "$IMAGE:candidate"
-          tag=$(date -u +%Y%m%d-%H%M)
-          for t in "$tag" latest; do
-            skopeo copy --dest-tls-verify=false --dest-creds "$OWNER:$REGISTRY_TOKEN" \
-              "docker-archive:$tar" "docker://$IMAGE:$t"
-          done
+          # Only :latest. Every rebuild has fresh apt/pip layers, so dated tags
+          # would fill the registry's disk; the replaced layers are freed by
+          # Forgejo's package cleanup.
+          skopeo copy --dest-tls-verify=false --dest-creds "$OWNER:$REGISTRY_TOKEN" \
+            "docker-archive:$tar" "docker://$IMAGE:latest"
 
       # Builds run on elmer's own Docker, and each rebuild orphans the previous
       # image and leaves build cache behind; every 30 min that fills the disk.

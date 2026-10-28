@@ -2,7 +2,7 @@
 
 Forgejo Actions job image with the `vault` CLI and Ansible (`ansible.windows`
 included). `publish` rebuilds and pushes it every 30 minutes as
-`gitea.acme.anvil/wile.coyote/ansible-runner:latest` (plus a dated tag).
+`gitea.acme.anvil/wile.coyote/ansible-runner:latest`.
 
 Use it from a workflow:
 
@@ -39,4 +39,6 @@ Forgejo is plain HTTP, so allow it in `/etc/docker/daemon.json`
 ```
 
 Repo secret `REGISTRY_TOKEN`: a Forgejo access token with `write:package`.
-Add a package cleanup rule (Settings → Packages) to prune old dated tags.
+Only `:latest` is pushed. Layers it replaces stay on Forgejo's disk until its
+package cleanup runs (admin cron `cleanup_packages`), so make sure that's
+enabled.
