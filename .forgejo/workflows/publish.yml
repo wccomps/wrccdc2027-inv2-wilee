@@ -55,3 +55,13 @@ jobs:
             skopeo copy --dest-tls-verify=false --dest-creds "$OWNER:$REGISTRY_TOKEN" \
               "docker-daemon:$IMAGE:candidate" "docker://$IMAGE:$t"
           done
+
+      # Builds run on elmer's own Docker, and each rebuild orphans the previous
+      # image and leaves build cache behind; every 30 min that fills the disk.
+      # Only untagged images and day-old cache: :latest and anything a
+      # container uses are kept.
+      - name: Clean up old images and build cache
+        if: always()
+        run: |
+          docker image prune -f
+          docker builder prune -f --filter until=24h
