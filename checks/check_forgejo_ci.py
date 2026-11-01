@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Custom check for WILEE's Forgejo Actions: gallery deploy, gallery health
-cron, and ansible-runner image rebuild cron. The app itself isn't requested
+"""Custom check for WILEE's Forgejo Actions: gallery deploy and gallery
+health cron. The ansible-runner image rebuild isn't checked: it pulls from
+the internet and needs the host's Docker in jobs, so it would fail teams for
+blocking egress or removing docker.sock from jobs. The app itself isn't requested
 here: the healthcheck workflow tests it (on wilee and over the network)
 every 15 minutes, and its max age below catches that going stale.
 
@@ -46,7 +48,6 @@ MAX_PAGES = 20
 WORKFLOWS = [
     ("wile.coyote/gallery", "deploy.yml", None),
     ("wile.coyote/gallery", "healthcheck.yml", timedelta(minutes=25)),        # */15 cron
-    ("wile.coyote/wilee-ansible-runner", "publish.yml", timedelta(minutes=45)),  # */30 cron
 ]
 
 
